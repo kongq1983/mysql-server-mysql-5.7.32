@@ -1361,7 +1361,7 @@ trx_start_low(
 	if (!trx->auto_commit) {
 		++trx->will_lock;
 	} else if (trx->will_lock == 0) {
-		trx->read_only = true;
+		trx->read_only = true; //  只读事务
 	}
 
 #ifdef UNIV_DEBUG
@@ -1375,7 +1375,7 @@ trx_start_low(
 
 	/* The initial value for trx->no: TRX_ID_MAX is used in
 	read_view_open_now: */
-
+    // 开启read_view
 	trx->no = TRX_ID_MAX;
 
 	ut_a(ib_vector_is_empty(trx->autoinc_locks));
@@ -1412,7 +1412,7 @@ trx_start_low(
 
 		trx_sys_mutex_enter();
 
-		trx->id = trx_sys_get_new_trx_id();
+		trx->id = trx_sys_get_new_trx_id(); // 分配新的事务id
 
 		trx_sys->rw_trx_ids.push_back(trx->id);
 

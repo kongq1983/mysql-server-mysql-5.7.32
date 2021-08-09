@@ -45,7 +45,7 @@ class MVCC;
 /** Read view lists the trx ids of those transactions for which a consistent
 read should not see the modifications to the database. */
 
-class ReadView {
+class ReadView { // TODO ReadView
 	/** This is similar to a std::vector but it is not a drop
 	in replacement. It is specific to ReadView. */
 	class ids_t {
@@ -166,20 +166,20 @@ public:
 	@param[in]	id	transaction id to check against the view
 	@param[in]	name	table name
 	@return whether the view sees the modifications of id. */
-	bool changes_visible(
+	bool changes_visible( // TODO MVCC 数据可见性
 		trx_id_t		id,
 		const table_name_t&	name) const
 		MY_ATTRIBUTE((warn_unused_result))
 	{
 		ut_ad(id > 0);
-
+        // 如果id小于ReadView中的最小事务ID，则这条记录是可见的 ，说明此条记录在select这个事务之前就结束了
 		if (id < m_up_limit_id || id == m_creator_trx_id) {
 
 			return(true);
 		}
 
 		check_trx_id_sanity(id, name);
-
+        // 如果id大于ReadView中的最大事务ID ，则说明这条记录在事务开始之后进行了修改，所以此条记录不可见
 		if (id >= m_low_limit_id) {
 
 			return(false);
@@ -190,8 +190,9 @@ public:
 		}
 
 		const ids_t::value_type*	p = m_ids.data();
-
-		return(!std::binary_search(p, p + m_ids.size(), id));
+        // 判断是否在ReadView中，如果在，则说明在创建ReadView时，此条记录还处于活跃状态，不应该被查询到；
+        // 否则，说明在创建ReadView时此条记录已经不处于活跃状态，可以被查询到
+		return(!std::binary_search(p, p + m_ids.size(), id)); // 如果找不到，binary_search返回false，最终结果集是true
 	}
 
 	/**
